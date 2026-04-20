@@ -175,19 +175,22 @@ const filteredPlants = PLANTS.filter((plant) => {
           </TouchableOpacity>
         </View>
 
-
         {filteredPlants.length > 0 ? (
-          filteredPlants.map((plant) => (
-            <ProductCard
-              key={plant.id}
-              name={plant.name}
-              latinName={plant.latinName}
-              description={plant.description}
-              price={plant.price}
-              imageUri={plant.imageUri}
-              tag={plant.tag}
-            />
-          ))
+          <>
+            {filteredPlants.map((plant) => (
+              <ProductCard
+                key={plant.id}
+                name={plant.name}
+                latinName={plant.latinName}
+                description={plant.description}
+                price={plant.price}
+                imageUri={plant.imageUri}
+                tag={plant.tag}
+                onDetailsPress={() => navigation.navigate('ProductDetails', { plant })}
+                onCardPress={() => navigation.navigate('ProductDetails', { plant })}
+              />
+            ))}
+          </>
         ) : (
           <View style={styles.emptyState}>
             <Text style={[styles.emptyText, { color: textColor }]}>
