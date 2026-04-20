@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+// screens/HomeScreen.js
+
+import React, { useState, useEffect } from 'react';
 import ProductCard from '../ProductCard';
 import {
   View,
@@ -11,80 +13,76 @@ import {
   Switch,
   TouchableOpacity,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const PLANTS = [
-  {
-    id: '1',
-    name: 'Monstera Deliciosa',
-    latinName: 'Monstera deliciosa',
-    category: 'Tropisch',
-    description:
-      'De koningin van het jungle-interieur. Met haar grote, gespleten bladeren zorgt de Monstera voor een tropische sfeer in elke ruimte.',
-    price: '24,95',
-    imageUri: 'https://images.unsplash.com/photo-1614594975525-e45190c55d0b?w=600&q=80',
-    tag: null,
-    petFriendly: false,
-  },
-  {
-    id: '2',
-    name: 'Pothos',
-    latinName: 'Epipremnum aureum',
-    category: 'Hangplanten',
-    description:
-      'Onverwoestbaar en snelgroeiend. De Pothos is perfect voor beginners en hangt prachtig neer vanuit een hangpot of rek.',
-    price: '9,95',
-    imageUri: 'https://images.unsplash.com/photo-1637967886160-fd78dc3ce3f5?w=600&q=80',
-    tag: 'Diervriendelijk',
-    petFriendly: true,
-  },
-  {
-    id: '3',
-    name: 'Vrouwentong',
-    latinName: 'Sansevieria trifasciata',
-    category: 'Luchtzuiverend',
-    description:
-      'Stoer, strak en supersterk. De Vrouwentong overleeft bijna alles en zuivert bovendien je lucht — ideaal voor de drukke student.',
-    price: '14,95',
-    imageUri: 'https://www.tuinflora.be/media/catalog/product/cache/3a7af0a8e0e317723249dc9098669163/f/d/fd24470-0-wh.jpg',
-    tag: 'Bestseller',
-    petFriendly: false,
-  },
-  {
-    id: '4',
-    name: 'Vredeslelie',
-    latinName: 'Spathiphyllum wallisii',
-    category: 'Luchtzuiverend',
-    description:
-      'Elegant wit en luchtzuiverend. De Vredeslelie gedijt goed in schaduwrijke kamers en geeft aan wanneer ze water nodig heeft.',
-    price: '12,50',
-    imageUri: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSKiR8KP4Sz75mtYqs_FQIwF7fbjeXBRC4sI95L13nccx6aViGRQ-Rmvn69LLxeF3FSHm1E1dRfLBTAn7TB9vesXprPS-em8XiF8vbBQLg&s=10',
-    tag: 'Diervriendelijk',
-    petFriendly: true,
-  },
-  {
-    id: '5',
-    name: 'Vioolbladvijg',
-    latinName: 'Ficus lyrata',
-    category: 'Tropisch',
-    description:
-      'De hipste plant van het moment. Met zijn grote, glanzende bladeren is de Vioolbladvijg een echte eyecatcher voor elk interieur.',
-    price: '34,95',
-    imageUri: 'https://m.media-amazon.com/images/I/711KLELX0oL._AC_SL1500_.jpg',
-    tag: 'Nieuw',
-    petFriendly: false,
-  },
-];
+// ─── Webflow API configuratie ─────────────────────────────────────────────────
+const WEBFLOW_API_TOKEN = '9888014e5b2bf77af6f68ed4e698bc207690d096e725e25a4ef4409de1b821c7';
+const WEBFLOW_COLLECTION_ID = '69e6a7ef54314a229028f5c9';
+
+
+const mapWebflowItem = (item) => ({
+  id: item._id,
+  name: item.fieldData['naam'] ?? item.fieldData['name'] ?? 'Onbekend',
+  latinName: item.fieldData['latijnse-naam'] ?? '',
+  category: item.fieldData['categorie'] ?? 'Andere',
+  description: item.fieldData['beschrijving'] ?? item.fieldData['description'] ?? '',
+  price: item.fieldData['prijs'] ?? item.fieldData['price'] ?? '0,00',
+  imageUri: item.fieldData['afbeelding'] ?? '',  
+  tag: item.fieldData['tag'] ?? null,
+  petFriendly: item.fieldData['diervriendelijk'] ?? false,
+});
 
 export default function HomeScreen({ navigation }) {
+  // ─── State ──────────────────────────────────────────────────────────────────
+  const [plants, setPlants] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [petFriendlyOnly, setPetFriendlyOnly] = useState(false);
   const [selectedChip, setSelectedChip] = useState('Alle');
-
   const [cart, setCart] = useState({});
 
+  // ─── Fetch bij laden van het scherm ──────────────────────────────────────────
+  useEffect(() => {
+    fetchPlants();
+  }, []);
+
+  const fetchPlants = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch(
+        `https://api.webflow.com/v2/collections/${WEBFLOW_COLLECTION_ID}/items`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${WEBFLOW_API_TOKEN}`,
+            'accept': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API fout: ${response.status} ${response.statusText}`);
+      }
+
+      const json = await response.json();
+      const mappedPlants = json.items.map(mapWebflowItem);
+      setPlants(mappedPlants);
+
+    } catch (err) {
+      console.error('Fout bij ophalen planten:', err);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ─── Winkelmandje ─────────────────────────────────────────────────────────
   const handleQuantityChange = (name, quantity, price) => {
     setCart((prevCart) => ({
       ...prevCart,
@@ -93,14 +91,13 @@ export default function HomeScreen({ navigation }) {
   };
 
   const totalItems = Object.values(cart).reduce((sum, item) => sum + item.quantity, 0);
-
-
   const totalPrice = Object.values(cart).reduce((sum, item) => {
     const priceNum = parseFloat(item.price.replace(',', '.'));
     return sum + priceNum * item.quantity;
   }, 0);
 
-  const filteredPlants = PLANTS.filter((plant) => {
+  // ─── Filter ───────────────────────────────────────────────────────────────
+  const filteredPlants = plants.filter((plant) => {
     const matchesSearch = plant.name.toLowerCase().includes(searchText.toLowerCase());
     const matchesPet = petFriendlyOnly ? plant.petFriendly : true;
     const matchesChip = selectedChip === 'Alle' ? true : plant.category === selectedChip;
@@ -111,6 +108,37 @@ export default function HomeScreen({ navigation }) {
   const cardBg = isDarkMode ? '#1a2e22' : '#ffffff';
   const textColor = isDarkMode ? '#d8f3dc' : '#1b4332';
 
+  // ─── Laadscherm ───────────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#52B788" />
+          <Text style={[styles.loadingText, { color: textColor }]}>
+            Planten ophalen... 🌱
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ─── Foutscherm ───────────────────────────────────────────────────────────
+  if (error) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
+        <View style={styles.centered}>
+          <Text style={styles.errorEmoji}>🪴</Text>
+          <Text style={[styles.errorTitle, { color: textColor }]}>Oeps, er ging iets mis!</Text>
+          <Text style={styles.errorMsg}>{error}</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={fetchPlants}>
+            <Text style={styles.retryText}>Opnieuw proberen</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ─── Hoofdscherm ──────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
@@ -122,9 +150,7 @@ export default function HomeScreen({ navigation }) {
 
         <View style={styles.header}>
           <Image
-            source={{
-              uri: 'https://images.unsplash.com/photo-1462275646964-a0e3386b89fa?w=800&q=80',
-            }}
+            source={{ uri: 'https://images.unsplash.com/photo-1462275646964-a0e3386b89fa?w=800&q=80' }}
             style={styles.heroImage}
             resizeMode="cover"
           />
@@ -134,14 +160,14 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
+
         {totalItems > 0 && (
           <View style={styles.cartBanner}>
-
+            <Text style={styles.cartEmoji}>🛒</Text>
             <View style={{ flex: 1 }}>
               <Text style={styles.cartTitle}>
                 {totalItems} plant{totalItems !== 1 ? 'en' : ''} in je mandje
               </Text>
-
               <Text style={styles.cartTotal}>
                 Totaal: €{totalPrice.toFixed(2).replace('.', ',')}
               </Text>
@@ -175,7 +201,6 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
-
         <View style={styles.searchWrapper}>
           <TextInput
             style={[styles.searchInput, { backgroundColor: cardBg, color: textColor }]}
@@ -187,11 +212,8 @@ export default function HomeScreen({ navigation }) {
           />
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.chips}
-        >
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
           {['Alle', 'Tropisch', 'Cactus', 'Hangplanten', 'Luchtzuiverend', 'Groot'].map((chip) => (
             <TouchableOpacity
               key={chip}
@@ -209,8 +231,8 @@ export default function HomeScreen({ navigation }) {
           <Text style={[styles.sectionTitle, { color: textColor }]}>
             {filteredPlants.length} plant{filteredPlants.length !== 1 ? 'en' : ''} gevonden
           </Text>
-          <TouchableOpacity>
-            <Text style={styles.sortLink}>Sorteren ↕</Text>
+          <TouchableOpacity onPress={fetchPlants}>
+            <Text style={styles.sortLink}>↻ Vernieuwen</Text>
           </TouchableOpacity>
         </View>
 
@@ -243,9 +265,6 @@ export default function HomeScreen({ navigation }) {
 
 
         <View style={styles.banner}>
-
-
-
           <Text style={styles.bannerTitle}>Word lid van de club!</Text>
           <Text style={styles.bannerSub}>
             Ontvang wekelijkse plantentips & exclusieve deals.
@@ -276,6 +295,16 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { padding: 16, paddingBottom: 40 },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  loadingText: { fontSize: 16, fontWeight: '600', marginTop: 12 },
+  errorEmoji: { fontSize: 48 },
+  errorTitle: { fontSize: 20, fontWeight: '800' },
+  errorMsg: { color: '#E07A5F', fontSize: 13, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: {
+    backgroundColor: '#1B4332', borderRadius: 12,
+    paddingHorizontal: 24, paddingVertical: 12, marginTop: 8,
+  },
+  retryText: { color: '#fff', fontWeight: '700' },
   header: { borderRadius: 24, overflow: 'hidden', marginBottom: 16, height: 220 },
   heroImage: { width: '100%', height: '100%', position: 'absolute' },
   heroOverlay: {
@@ -284,8 +313,6 @@ const styles = StyleSheet.create({
   },
   heroTitle: { fontSize: 30, fontWeight: '900', color: '#fff', letterSpacing: -0.5 },
   heroSub: { fontSize: 14, color: '#B7E4C7', marginTop: 2 },
-
-
   cartBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: '#1B4332', borderRadius: 16,
@@ -294,7 +321,6 @@ const styles = StyleSheet.create({
   cartEmoji: { fontSize: 28 },
   cartTitle: { color: '#fff', fontWeight: '700', fontSize: 15 },
   cartTotal: { color: '#52B788', fontWeight: '800', fontSize: 16, marginTop: 2 },
-
   controlBar: {
     borderRadius: 16, padding: 14, marginBottom: 12, gap: 10,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
