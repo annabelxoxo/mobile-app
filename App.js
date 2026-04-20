@@ -1,6 +1,5 @@
-import React, {useState} from "react";
-import
-{
+// ✅ Juist — gewoon toevoegen aan de bestaande react-native import
+import {
   View,
   Text,
   Image,
@@ -9,12 +8,10 @@ import
   StyleSheet,
   Button,
   Switch,
+  SafeAreaView,        // 👈 hier toevoegen
   TouchableOpacity,
   StatusBar,
-}
-from "react-native";
-import ProductCard from "./ProductCard";
-import { SafeAreaView } from "react-native/types_generated/index";
+} from 'react-native';
 
 
 const PLANTS = [
