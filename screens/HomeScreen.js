@@ -29,7 +29,10 @@ const mapWebflowItem = (item) => ({
   category: item.fieldData['categorie'] ?? 'Andere',
   description: item.fieldData['beschrijving'] ?? item.fieldData['description'] ?? '',
   price: item.fieldData['prijs'] ?? item.fieldData['price'] ?? '0,00',
-  imageUri: item.fieldData['afbeelding'] ?? '',  
+  imageUri:
+      typeof rawImage === 'string' && rawImage.trim() !== ''
+        ? rawImage
+        : 'https://img.freepik.com/free-vector/illustration-gallery-icon_53876-27002.jpg?semt=ais_hybrid&w=740&q=80', 
   tag: item.fieldData['tag'] ?? null,
   petFriendly: item.fieldData['diervriendelijk'] ?? false,
 });
