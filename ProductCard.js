@@ -1,5 +1,4 @@
 
-import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +6,9 @@ import {
   Pressable,
   StyleSheet,
 } from 'react-native';
+
+
+
 
 const ProductCard = ({ name, latinName, description, price, imageUri, tag }) => {
   const [added, setAdded] = useState(false);
