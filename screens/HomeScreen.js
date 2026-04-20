@@ -12,15 +12,14 @@ import {
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
-
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 
 const PLANTS = [
   {
-     id: '1',
+    id: '1',
     name: 'Monstera Deliciosa',
     latinName: 'Monstera deliciosa',
+    category: 'Tropisch',
     description:
       'De koningin van het jungle-interieur. Met haar grote, gespleten bladeren zorgt de Monstera voor een tropische sfeer in elke ruimte.',
     price: '24,95',
@@ -32,6 +31,7 @@ const PLANTS = [
     id: '2',
     name: 'Pothos',
     latinName: 'Epipremnum aureum',
+    category: 'Hangplanten',
     description:
       'Onverwoestbaar en snelgroeiend. De Pothos is perfect voor beginners en hangt prachtig neer vanuit een hangpot of rek.',
     price: '9,95',
@@ -43,6 +43,7 @@ const PLANTS = [
     id: '3',
     name: 'Vrouwentong',
     latinName: 'Sansevieria trifasciata',
+    category: 'Luchtzuiverend',
     description:
       'Stoer, strak en supersterk. De Vrouwentong overleeft bijna alles en zuivert bovendien je lucht — ideaal voor de drukke student.',
     price: '14,95',
@@ -54,6 +55,7 @@ const PLANTS = [
     id: '4',
     name: 'Vredeslelie',
     latinName: 'Spathiphyllum wallisii',
+    category: 'Luchtzuiverend',
     description:
       'Elegant wit en luchtzuiverend. De Vredeslelie gedijt goed in schaduwrijke kamers en geeft aan wanneer ze water nodig heeft.',
     price: '12,50',
@@ -65,6 +67,7 @@ const PLANTS = [
     id: '5',
     name: 'Vioolbladvijg',
     latinName: 'Ficus lyrata',
+    category: 'Tropisch',
     description:
       'De hipste plant van het moment. Met zijn grote, glanzende bladeren is de Vioolbladvijg een echte eyecatcher voor elk interieur.',
     price: '34,95',
@@ -74,48 +77,49 @@ const PLANTS = [
   },
 ];
 
-
-export default function HomeScreen({ navigation }) 
-{
+export default function HomeScreen({ navigation }) {
   const [searchText, setSearchText] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [petFriendlyOnly, setPetFriendlyOnly] = useState(false);
+  const [selectedChip, setSelectedChip] = useState('Alle');
 
-const filteredPlants = PLANTS.filter((plant) => {
-    const matchesSearch = plant.name
-      .toLowerCase()
-      .includes(searchText.toLowerCase());
+  const filteredPlants = PLANTS.filter((plant) => {
+    const matchesSearch = plant.name.toLowerCase().includes(searchText.toLowerCase());
     const matchesPet = petFriendlyOnly ? plant.petFriendly : true;
-    return matchesSearch && matchesPet;
+    const matchesChip = selectedChip === 'Alle' ? true : plant.category === selectedChip;
+    return matchesSearch && matchesPet && matchesChip;
   });
 
   const bg = isDarkMode ? '#0d1f15' : '#f2f7f4';
   const cardBg = isDarkMode ? '#1a2e22' : '#ffffff';
-  const textColor = isDarkMode ?'#d8f3dc' : '#1b4332';
+  const textColor = isDarkMode ? '#d8f3dc' : '#1b4332';
 
   return (
-    <SafeAreaView style={[styles.safe, {backgroundColor :bg}]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-   <ScrollView
-   style={{flex:1}}
-   contentContainerStyle={styles.scroll}
-   showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.header}>
-        <Image
-          source={{
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── HERO ── */}
+        <View style={styles.header}>
+          <Image
+            source={{
               uri: 'https://images.unsplash.com/photo-1462275646964-a0e3386b89fa?w=800&q=80',
             }}
-        style={styles.heroImage}
-        resizeMode="cover"
-        />
-                  <View style={styles.heroOverlay}>
+            style={styles.heroImage}
+            resizeMode="cover"
+          />
+          <View style={styles.heroOverlay}>
             <Text style={styles.heroTitle}>KamerPlant Club</Text>
             <Text style={styles.heroSub}>Jouw groene thuis begint hier</Text>
           </View>
-    </View>
-  <View style={[styles.controlBar, {backgroundColor: cardBg}]}>
-    <View style={styles.switchRow}>
+        </View>
+
+        {/* ── CONTROLS ── */}
+        <View style={[styles.controlBar, { backgroundColor: cardBg }]}>
+          <View style={styles.switchRow}>
             <Text style={[styles.switchLabel, { color: textColor }]}>
               {isDarkMode ? 'Nachtmodus' : 'Dagmodus'}
             </Text>
@@ -126,7 +130,6 @@ const filteredPlants = PLANTS.filter((plant) => {
               thumbColor={isDarkMode ? '#52B788' : '#1B4332'}
             />
           </View>
-
           <View style={styles.switchRow}>
             <Text style={[styles.switchLabel, { color: textColor }]}>
               Alleen diervriendelijk
@@ -138,36 +141,42 @@ const filteredPlants = PLANTS.filter((plant) => {
               thumbColor={petFriendlyOnly ? '#52B788' : '#1B4332'}
             />
           </View>
-          </View>
+        </View>
 
-      <View style={styles.searchWrapper}>
-        <TextInput
-        style={[styles.searchInput, {backgroundColor: cardBg, color: textColor}]}
-        placeholder="Zoek jouw perfecte plant..."
-        placeholderTextColor={isDarkMode ? '#95D5B2' : '#6c757d'}
-        value={searchText}
-        onChangeText={setSearchText}
-        clearButtonMode="while-editing"
-        />
-      </View>
+        {/* ── ZOEKBALK ── */}
+        <View style={styles.searchWrapper}>
+          <TextInput
+            style={[styles.searchInput, { backgroundColor: cardBg, color: textColor }]}
+            placeholder="Zoek jouw perfecte plant..."
+            placeholderTextColor={isDarkMode ? '#95D5B2' : '#6c757d'}
+            value={searchText}
+            onChangeText={setSearchText}
+            clearButtonMode="while-editing"
+          />
+        </View>
 
-      <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={styles.chips}
-      >
-      {['Alle', 'Tropisch', 'Cactus', 'Hangplanten', 'Luchtzuiverend', 'Groot'].map(
-            (chip) => (
-              <TouchableOpacity key={chip} style={styles.chip}>
-                <Text style={styles.chipText}>{chip}</Text>
-              </TouchableOpacity>
-            )
-          )}
-      </ScrollView>
+        {/* ── CHIPS ── */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.chips}
+        >
+          {['Alle', 'Tropisch', 'Cactus', 'Hangplanten', 'Luchtzuiverend', 'Groot'].map((chip) => (
+            <TouchableOpacity
+              key={chip}
+              style={[styles.chip, selectedChip === chip && styles.chipActive]}
+              onPress={() => setSelectedChip(chip)}
+            >
+              <Text style={[styles.chipText, selectedChip === chip && styles.chipTextActive]}>
+                {chip}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
-      <View style={styles.sectionHeader}>
-
-<Text style={[styles.sectionTitle, { color: textColor }]}>
+        {/* ── SECTIE HEADER ── */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: textColor }]}>
             {filteredPlants.length} plant{filteredPlants.length !== 1 ? 'en' : ''} gevonden
           </Text>
           <TouchableOpacity>
@@ -175,6 +184,7 @@ const filteredPlants = PLANTS.filter((plant) => {
           </TouchableOpacity>
         </View>
 
+        {/* ── PRODUCT CARDS ── */}
         {filteredPlants.length > 0 ? (
           <>
             {filteredPlants.map((plant) => (
@@ -200,7 +210,7 @@ const filteredPlants = PLANTS.filter((plant) => {
           </View>
         )}
 
-
+        {/* ── BANNER ── */}
         <View style={styles.banner}>
           <Text style={styles.bannerTitle}>Word lid van de club!</Text>
           <Text style={styles.bannerSub}>
@@ -212,7 +222,6 @@ const filteredPlants = PLANTS.filter((plant) => {
             placeholderTextColor="#B7E4C7"
             keyboardType="email-address"
           />
-
           <View style={styles.buttonWrapper}>
             <Button
               title="Inschrijven"
@@ -222,7 +231,6 @@ const filteredPlants = PLANTS.filter((plant) => {
           </View>
         </View>
 
-
         <Text style={styles.footer}>
           🌿 KamerPlant Club — Made with love in België
         </Text>
@@ -231,188 +239,61 @@ const filteredPlants = PLANTS.filter((plant) => {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-  },
-  scroll: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-
-
-  header: {
-    borderRadius: 24,
-    overflow: 'hidden',
-    marginBottom: 16,
-    height: 220,
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
-  },
+  safe: { flex: 1 },
+  scroll: { padding: 16, paddingBottom: 40 },
+  header: { borderRadius: 24, overflow: 'hidden', marginBottom: 16, height: 220 },
+  heroImage: { width: '100%', height: '100%', position: 'absolute' },
   heroOverlay: {
     flex: 1,
     backgroundColor: 'rgba(27, 67, 50, 0.55)',
     justifyContent: 'flex-end',
     padding: 20,
   },
-  heroEmoji: {
-    fontSize: 32,
-  },
-  heroTitle: {
-    fontSize: 30,
-    fontWeight: '900',
-    color: '#fff',
-    letterSpacing: -0.5,
-  },
-  heroSub: {
-    fontSize: 14,
-    color: '#B7E4C7',
-    marginTop: 2,
-  },
-
-
+  heroTitle: { fontSize: 30, fontWeight: '900', color: '#fff', letterSpacing: -0.5 },
+  heroSub: { fontSize: 14, color: '#B7E4C7', marginTop: 2 },
   controlBar: {
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 12,
-    gap: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
+    borderRadius: 16, padding: 14, marginBottom: 12, gap: 10,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06, shadowRadius: 6, elevation: 3,
   },
-  switchRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  switchLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-
-
+  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  switchLabel: { fontSize: 14, fontWeight: '600' },
   searchWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    marginBottom: 14,
-    borderWidth: 1.5,
-    borderColor: '#B7E4C7',
-    shadowColor: '#1B4332',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    elevation: 2,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
+    borderRadius: 14, paddingHorizontal: 14, marginBottom: 14,
+    borderWidth: 1.5, borderColor: '#B7E4C7',
+    shadowColor: '#1B4332', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07, shadowRadius: 6, elevation: 2,
   },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: 12,
-    fontSize: 15,
-  },
-
-
-  chips: {
-    marginBottom: 16,
-  },
+  searchInput: { flex: 1, paddingVertical: 12, fontSize: 15 },
+  chips: { marginBottom: 16 },
   chip: {
-    backgroundColor: '#1B4332',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 8,
+    backgroundColor: '#1B4332', borderRadius: 20,
+    paddingHorizontal: 16, paddingVertical: 8, marginRight: 8,
   },
-  chipText: {
-    color: '#B7E4C7',
-    fontWeight: '700',
-    fontSize: 13,
-  },
-
-
+  chipActive: { backgroundColor: '#E07A5F' },
+  chipText: { color: '#B7E4C7', fontWeight: '700', fontSize: 13 },
+  chipTextActive: { color: '#fff' },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: 12,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  sortLink: {
-    color: '#52B788',
-    fontWeight: '700',
-    fontSize: 13,
-  },
-
-
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 50,
-    gap: 8,
-  },
-  emptyEmoji: {
-    fontSize: 48,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  emptySubText: {
-    color: '#8FAD99',
-    fontSize: 14,
-  },
-
-
+  sectionTitle: { fontSize: 16, fontWeight: '800' },
+  sortLink: { color: '#52B788', fontWeight: '700', fontSize: 13 },
+  emptyState: { alignItems: 'center', paddingVertical: 50, gap: 8 },
+  emptyText: { fontSize: 18, fontWeight: '700' },
+  emptySubText: { color: '#8FAD99', fontSize: 14 },
   banner: {
-    backgroundColor: '#1B4332',
-    borderRadius: 20,
-    padding: 22,
-    marginTop: 10,
-    gap: 8,
+    backgroundColor: '#1B4332', borderRadius: 20,
+    padding: 22, marginTop: 10, gap: 8,
   },
-  bannerTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  bannerSub: {
-    color: '#B7E4C7',
-    fontSize: 13,
-    lineHeight: 18,
-  },
+  bannerTitle: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  bannerSub: { color: '#B7E4C7', fontSize: 13, lineHeight: 18 },
   emailInput: {
-    backgroundColor: '#2D6A4F',
-    borderRadius: 10,
-    padding: 12,
-    color: '#fff',
-    fontSize: 14,
-    marginTop: 4,
+    backgroundColor: '#2D6A4F', borderRadius: 10,
+    padding: 12, color: '#fff', fontSize: 14, marginTop: 4,
   },
-  buttonWrapper: {
-    marginTop: 4,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-
-
-  footer: {
-    textAlign: 'center',
-    color: '#8FAD99',
-    fontSize: 12,
-    marginTop: 24,
-  },
+  buttonWrapper: { marginTop: 4, borderRadius: 10, overflow: 'hidden' },
+  footer: { textAlign: 'center', color: '#8FAD99', fontSize: 12, marginTop: 24 },
 });
-
