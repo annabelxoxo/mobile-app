@@ -83,6 +83,23 @@ export default function HomeScreen({ navigation }) {
   const [petFriendlyOnly, setPetFriendlyOnly] = useState(false);
   const [selectedChip, setSelectedChip] = useState('Alle');
 
+  const [cart, setCart] = useState({});
+
+  const handleQuantityChange = (name, quantity, price) => {
+    setCart((prevCart) => ({
+      ...prevCart,
+      [name]: { quantity, price },
+    }));
+  };
+
+  const totalItems = Object.values(cart).reduce((sum, item) => sum + item.quantity, 0);
+
+
+  const totalPrice = Object.values(cart).reduce((sum, item) => {
+    const priceNum = parseFloat(item.price.replace(',', '.'));
+    return sum + priceNum * item.quantity;
+  }, 0);
+
   const filteredPlants = PLANTS.filter((plant) => {
     const matchesSearch = plant.name.toLowerCase().includes(searchText.toLowerCase());
     const matchesPet = petFriendlyOnly ? plant.petFriendly : true;
@@ -102,7 +119,7 @@ export default function HomeScreen({ navigation }) {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── HERO ── */}
+
         <View style={styles.header}>
           <Image
             source={{
@@ -117,7 +134,22 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
-        {/* ── CONTROLS ── */}
+        {totalItems > 0 && (
+          <View style={styles.cartBanner}>
+
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cartTitle}>
+                {totalItems} plant{totalItems !== 1 ? 'en' : ''} in je mandje
+              </Text>
+
+              <Text style={styles.cartTotal}>
+                Totaal: €{totalPrice.toFixed(2).replace('.', ',')}
+              </Text>
+            </View>
+          </View>
+        )}
+
+
         <View style={[styles.controlBar, { backgroundColor: cardBg }]}>
           <View style={styles.switchRow}>
             <Text style={[styles.switchLabel, { color: textColor }]}>
@@ -143,7 +175,7 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
-        {/* ── ZOEKBALK ── */}
+
         <View style={styles.searchWrapper}>
           <TextInput
             style={[styles.searchInput, { backgroundColor: cardBg, color: textColor }]}
@@ -155,7 +187,6 @@ export default function HomeScreen({ navigation }) {
           />
         </View>
 
-        {/* ── CHIPS ── */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -174,7 +205,6 @@ export default function HomeScreen({ navigation }) {
           ))}
         </ScrollView>
 
-        {/* ── SECTIE HEADER ── */}
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>
             {filteredPlants.length} plant{filteredPlants.length !== 1 ? 'en' : ''} gevonden
@@ -184,7 +214,7 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* ── PRODUCT CARDS ── */}
+
         {filteredPlants.length > 0 ? (
           <>
             {filteredPlants.map((plant) => (
@@ -198,6 +228,7 @@ export default function HomeScreen({ navigation }) {
                 tag={plant.tag}
                 onDetailsPress={() => navigation.navigate('ProductDetails', { plant })}
                 onCardPress={() => navigation.navigate('ProductDetails', { plant })}
+                onQuantityChange={handleQuantityChange}
               />
             ))}
           </>
@@ -210,8 +241,11 @@ export default function HomeScreen({ navigation }) {
           </View>
         )}
 
-        {/* ── BANNER ── */}
+
         <View style={styles.banner}>
+
+
+
           <Text style={styles.bannerTitle}>Word lid van de club!</Text>
           <Text style={styles.bannerSub}>
             Ontvang wekelijkse plantentips & exclusieve deals.
@@ -245,13 +279,22 @@ const styles = StyleSheet.create({
   header: { borderRadius: 24, overflow: 'hidden', marginBottom: 16, height: 220 },
   heroImage: { width: '100%', height: '100%', position: 'absolute' },
   heroOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(27, 67, 50, 0.55)',
-    justifyContent: 'flex-end',
-    padding: 20,
+    flex: 1, backgroundColor: 'rgba(27, 67, 50, 0.55)',
+    justifyContent: 'flex-end', padding: 20,
   },
   heroTitle: { fontSize: 30, fontWeight: '900', color: '#fff', letterSpacing: -0.5 },
   heroSub: { fontSize: 14, color: '#B7E4C7', marginTop: 2 },
+
+
+  cartBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#1B4332', borderRadius: 16,
+    padding: 16, marginBottom: 12,
+  },
+  cartEmoji: { fontSize: 28 },
+  cartTitle: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  cartTotal: { color: '#52B788', fontWeight: '800', fontSize: 16, marginTop: 2 },
+
   controlBar: {
     borderRadius: 16, padding: 14, marginBottom: 12, gap: 10,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 },

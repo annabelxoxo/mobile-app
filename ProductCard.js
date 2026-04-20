@@ -16,19 +16,37 @@ const ProductCard = ({
   price,
   imageUri,
   tag,
+  onQuantityChange, 
 }) => {
-  const [added, setAdded] = useState(false);
+
+  const [quantity, setQuantity] = useState(0);
+
   const navigation = useNavigation();
 
- const goToDetails = () => {
-  navigation.navigate('ProductDetails', {
-    plant: { name, latinName, description, price, imageUri, tag },
-  });
-};
+  const goToDetails = () => {
+    navigation.navigate('ProductDetails', {
+      plant: { name, latinName, description, price, imageUri, tag },
+    });
+  };
+
+
+  const increase = () => {
+    const newQty = quantity + 1;
+    setQuantity(newQty);
+    onQuantityChange && onQuantityChange(name, newQty, price);
+  };
+
+
+  const decrease = () => {
+    const newQty = Math.max(0, quantity - 1);
+    setQuantity(newQty);
+    onQuantityChange && onQuantityChange(name, newQty, price);
+  };
 
   return (
     <TouchableOpacity onPress={goToDetails} activeOpacity={0.9}>
       <View style={styles.card}>
+
 
         {tag && (
           <View style={styles.badge}>
@@ -36,14 +54,18 @@ const ProductCard = ({
           </View>
         )}
 
+
         <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
 
         <View style={styles.info}>
           <View style={styles.nameRow}>
-            <View>
+            <View style={{ flex: 1 }}>
+
               <Text style={styles.name}>{name}</Text>
+
               <Text style={styles.latinName}>{latinName}</Text>
             </View>
+
             <Text style={styles.price}>€{price}</Text>
           </View>
 
@@ -53,7 +75,6 @@ const ProductCard = ({
 
           <View style={styles.buttonRow}>
 
-            {/* DETAILS BUTTON */}
             <Pressable
               style={({ pressed }) => [
                 styles.detailButton,
@@ -61,24 +82,30 @@ const ProductCard = ({
               ]}
               onPress={goToDetails}
             >
-              <Text style={styles.detailButtonText}>
-                Bekijk product →
-              </Text>
+              <Text style={styles.detailButtonText}>Bekijk →</Text>
             </Pressable>
 
-            {/* CART BUTTON */}
-            <Pressable
-              style={({ pressed }) => [
-                styles.cartButton,
-                pressed && styles.cartButtonPressed,
-                added && styles.cartButtonAdded,
-              ]}
-              onPress={() => setAdded(!added)}
-            >
-              <Text style={styles.cartButtonText}>
-                {added ? '✓' : '+'}
-              </Text>
-            </Pressable>
+            <View style={styles.counter}>
+              <Pressable
+                style={({ pressed }) => [styles.counterBtn, pressed && styles.counterBtnPressed]}
+                onPress={decrease}
+              >
+                <Text style={styles.counterBtnText}>−</Text>
+              </Pressable>
+
+              <Text style={styles.counterValue}>{quantity}</Text>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.counterBtn,
+                  styles.counterBtnAdd,
+                  pressed && styles.counterBtnPressed,
+                ]}
+                onPress={increase}
+              >
+                <Text style={styles.counterBtnText}>+</Text>
+              </Pressable>
+            </View>
 
           </View>
         </View>
@@ -100,92 +127,41 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   badge: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-    zIndex: 10,
-    backgroundColor: '#E07A5F',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    position: 'absolute', top: 12, left: 12, zIndex: 10,
+    backgroundColor: '#E07A5F', borderRadius: 20,
+    paddingHorizontal: 10, paddingVertical: 4,
   },
-  badgeText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  image: {
-    width: '100%',
-    height: 200,
-    backgroundColor: '#D8F3DC',
-  },
-  info: {
-    padding: 16,
-    gap: 8,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#1B4332',
-  },
-  latinName: {
-    fontSize: 12,
-    fontStyle: 'italic',
-    color: '#52B788',
-  },
-  price: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#E07A5F',
-  },
-  description: {
-    fontSize: 13,
-    color: '#5C6B5E',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 8,
-  },
+  badgeText: { color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  image: { width: '100%', height: 200, backgroundColor: '#D8F3DC' },
+  info: { padding: 16, gap: 8 },
+  nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  name: { fontSize: 18, fontWeight: '800', color: '#1B4332' },
+  latinName: { fontSize: 12, fontStyle: 'italic', color: '#52B788' },
+  price: { fontSize: 20, fontWeight: '900', color: '#E07A5F' },
+  description: { fontSize: 13, color: '#5C6B5E', lineHeight: 19 },
+  buttonRow: { flexDirection: 'row', gap: 10, marginTop: 8, alignItems: 'center' },
   detailButton: {
-    flex: 1,
+    flex: 1, backgroundColor: '#F2F7F4', borderRadius: 12,
+    paddingVertical: 12, alignItems: 'center',
+    borderWidth: 1.5, borderColor: '#1B4332',
+  },
+  detailButtonPressed: { backgroundColor: '#D8F3DC' },
+  detailButtonText: { color: '#1B4332', fontWeight: '700', fontSize: 13 },
+  counter: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#F2F7F4', borderRadius: 12,
+    overflow: 'hidden', borderWidth: 1.5, borderColor: '#1B4332',
+  },
+  counterBtn: {
+    width: 36, height: 44, alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#F2F7F4',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#1B4332',
   },
-  detailButtonPressed: {
-    backgroundColor: '#D8F3DC',
-  },
-  detailButtonText: {
-    color: '#1B4332',
-    fontWeight: '700',
-  },
-  cartButton: {
-    width: 46,
-    backgroundColor: '#1B4332',
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cartButtonPressed: {
-    backgroundColor: '#2D6A4F',
-  },
-  cartButtonAdded: {
-    backgroundColor: '#52B788',
-  },
-  cartButtonText: {
-    color: '#fff',
-    fontWeight: '900',
-    fontSize: 20,
+  counterBtnAdd: { backgroundColor: '#1B4332' },
+  counterBtnPressed: { opacity: 0.6 },
+  counterBtnText: { fontSize: 18, fontWeight: '900', color: '#1B4332' },
+  counterValue: {
+    width: 32, textAlign: 'center',
+    fontSize: 15, fontWeight: '800', color: '#1B4332',
   },
 });
 
