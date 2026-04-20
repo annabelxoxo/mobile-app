@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import ProductCard from './ProductCard';
+import ProductCard from '../ProductCard';
 import {
   View,
   Text,
