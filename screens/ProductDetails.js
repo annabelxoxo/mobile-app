@@ -11,8 +11,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 export default function ProductDetails({ route }) {
-  const { plant } = route.params;
+  const plant = route.params?.plant;
   const [added, setAdded] = useState(false);
+
+  if (!plant) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <Text>Plant niet gevonden 🪴</Text>
+      </View>
+    );
+  }
+
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>

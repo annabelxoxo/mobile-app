@@ -20,15 +20,11 @@ const ProductCard = ({
   const [added, setAdded] = useState(false);
   const navigation = useNavigation();
 
-  const goToDetails = () => {
-    navigation.navigate('ProductDetails', {
-      name,
-      latinName,
-      description,
-      price,
-      imageUri,
-    });
-  };
+ const goToDetails = () => {
+  navigation.navigate('ProductDetails', {
+    plant: { name, latinName, description, price, imageUri, tag },
+  });
+};
 
   return (
     <TouchableOpacity onPress={goToDetails} activeOpacity={0.9}>
