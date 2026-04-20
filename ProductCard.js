@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 const ProductCard = ({
   name,
@@ -15,16 +16,23 @@ const ProductCard = ({
   price,
   imageUri,
   tag,
-  onCardPress,    //  Manier 2: volledige kaart aanklikken
-  onDetailsPress, //  Manier 1: via "Bekijk product" knop
 }) => {
   const [added, setAdded] = useState(false);
+  const navigation = useNavigation();
+
+  const goToDetails = () => {
+    navigation.navigate('ProductDetails', {
+      name,
+      latinName,
+      description,
+      price,
+      imageUri,
+    });
+  };
 
   return (
-
-    <TouchableOpacity onPress={onCardPress} activeOpacity={0.9}>
+    <TouchableOpacity onPress={goToDetails} activeOpacity={0.9}>
       <View style={styles.card}>
-
 
         {tag && (
           <View style={styles.badge}>
@@ -32,9 +40,7 @@ const ProductCard = ({
           </View>
         )}
 
-
         <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
-
 
         <View style={styles.info}>
           <View style={styles.nameRow}>
@@ -51,17 +57,20 @@ const ProductCard = ({
 
           <View style={styles.buttonRow}>
 
-
+            {/* DETAILS BUTTON */}
             <Pressable
               style={({ pressed }) => [
                 styles.detailButton,
                 pressed && styles.detailButtonPressed,
               ]}
-              onPress={onDetailsPress}
+              onPress={goToDetails}
             >
-              <Text style={styles.detailButtonText}>Bekijk product →</Text>
+              <Text style={styles.detailButtonText}>
+                Bekijk product →
+              </Text>
             </Pressable>
 
+            {/* CART BUTTON */}
             <Pressable
               style={({ pressed }) => [
                 styles.cartButton,
@@ -95,35 +104,93 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   badge: {
-    position: 'absolute', top: 12, left: 12, zIndex: 10,
-    backgroundColor: '#E07A5F', borderRadius: 20,
-    paddingHorizontal: 10, paddingVertical: 4,
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    zIndex: 10,
+    backgroundColor: '#E07A5F',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
-  badgeText: { color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
-  image: { width: '100%', height: 200, backgroundColor: '#D8F3DC' },
-  info: { padding: 16, gap: 8 },
+  badgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  image: {
+    width: '100%',
+    height: 200,
+    backgroundColor: '#D8F3DC',
+  },
+  info: {
+    padding: 16,
+    gap: 8,
+  },
   nameRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
-  name: { fontSize: 18, fontWeight: '800', color: '#1B4332', letterSpacing: -0.3 },
-  latinName: { fontSize: 12, fontStyle: 'italic', color: '#52B788', marginTop: 1 },
-  price: { fontSize: 20, fontWeight: '900', color: '#E07A5F' },
-  description: { fontSize: 13, color: '#5C6B5E', lineHeight: 19, marginTop: 2 },
-  buttonRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  name: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1B4332',
+  },
+  latinName: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    color: '#52B788',
+  },
+  price: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#E07A5F',
+  },
+  description: {
+    fontSize: 13,
+    color: '#5C6B5E',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+  },
   detailButton: {
-    flex: 1, backgroundColor: '#F2F7F4', borderRadius: 12,
-    paddingVertical: 12, alignItems: 'center',
-    borderWidth: 1.5, borderColor: '#1B4332',
+    flex: 1,
+    backgroundColor: '#F2F7F4',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#1B4332',
   },
-  detailButtonPressed: { backgroundColor: '#D8F3DC' },
-  detailButtonText: { color: '#1B4332', fontWeight: '700', fontSize: 13 },
+  detailButtonPressed: {
+    backgroundColor: '#D8F3DC',
+  },
+  detailButtonText: {
+    color: '#1B4332',
+    fontWeight: '700',
+  },
   cartButton: {
-    width: 46, backgroundColor: '#1B4332', borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center',
+    width: 46,
+    backgroundColor: '#1B4332',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  cartButtonPressed: { backgroundColor: '#2D6A4F' },
-  cartButtonAdded: { backgroundColor: '#52B788' },
-  cartButtonText: { color: '#fff', fontWeight: '900', fontSize: 20 },
+  cartButtonPressed: {
+    backgroundColor: '#2D6A4F',
+  },
+  cartButtonAdded: {
+    backgroundColor: '#52B788',
+  },
+  cartButtonText: {
+    color: '#fff',
+    fontWeight: '900',
+    fontSize: 20,
+  },
 });
 
 export default ProductCard;
