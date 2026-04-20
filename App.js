@@ -45,7 +45,7 @@ const PLANTS = [
     description:
       'Stoer, strak en supersterk. De Vrouwentong overleeft bijna alles en zuivert bovendien je lucht — ideaal voor de drukke student.',
     price: '14,95',
-    imageUri: 'https://images.unsplash.com/photo-1599598425947-5202edd56fdb?w=600&q=80',
+    imageUri: 'https://www.tuinflora.be/sansevieria-trifasciata-vrouwentong-a09401.html',
     tag: 'Bestseller',
     petFriendly: false,
   },
@@ -56,7 +56,7 @@ const PLANTS = [
     description:
       'Elegant wit en luchtzuiverend. De Vredeslelie gedijt goed in schaduwrijke kamers en geeft aan wanneer ze water nodig heeft.',
     price: '12,50',
-    imageUri: 'https://images.unsplash.com/photo-1593691509543-c55fb32e4de0?w=600&q=80',
+    imageUri: 'https://nl.vecteezy.com/foto/60814239-levendig-vrede-lelie-fabriek-in-bruin-pot-met-weelderig-groen-bladeren-en-wit-bloei',
     tag: 'Diervriendelijk',
     petFriendly: true,
   },
@@ -67,7 +67,7 @@ const PLANTS = [
     description:
       'De hipste plant van het moment. Met zijn grote, glanzende bladeren is de Vioolbladvijg een echte eyecatcher voor elk interieur.',
     price: '34,95',
-    imageUri: 'https://images.unsplash.com/photo-1545165375-0231c3eb2c98?w=600&q=80',
+    imageUri: 'https://www.amazon.com.be/-/nl/Vioolbladvijg-Ficus-Lyrata-Hoogte-ca/dp/B079CMCFDK',
     tag: 'Nieuw',
     petFriendly: false,
   },
