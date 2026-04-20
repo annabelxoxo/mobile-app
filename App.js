@@ -1,4 +1,5 @@
-// ✅ Juist — gewoon toevoegen aan de bestaande react-native import
+import React, { useState } from 'react';
+import ProductCard from './ProductCard';
 import {
   View,
   Text,
@@ -8,7 +9,7 @@ import {
   StyleSheet,
   Button,
   Switch,
-  SafeAreaView,        // 👈 hier toevoegen
+  SafeAreaView,
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
