@@ -48,7 +48,7 @@ const ProductCard = ({
       <View style={styles.card}>
 
 
-        {tag && (
+        {tag && tag !== 'null' && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{tag}</Text>
           </View>

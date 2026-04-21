@@ -24,12 +24,12 @@ const WEBFLOW_COLLECTION_ID = '69e6a7ef54314a229028f5c9';
 
 const mapWebflowItem = (item) => ({
   id: item._id,
-  name: item.fieldData['naam'] ?? item.fieldData['name'] ?? 'Onbekend',
+  name: item.fieldData['name'] ?? 'Onbekend',
   latinName: item.fieldData['latijnse-naam'] ?? '',
   category: item.fieldData['categorie'] ?? 'Andere',
-  description: item.fieldData['beschrijving'] ?? item.fieldData['description'] ?? '',
-  price: item.fieldData['prijs'] ?? item.fieldData['price'] ?? '0,00',
-  imageUri: item.fieldData['imageUri'] ?? '',  
+  description: item.fieldData['beschrijving'] ?? '',
+  price: item.fieldData['prijs'] ?? '0,00',
+  imageUri: item.fieldData['afbeelding-2'] ?? '',  // 👈 was 'imageUri'
   tag: item.fieldData['tag'] ?? null,
   petFriendly: item.fieldData['diervriendelijk'] ?? false,
 });
@@ -71,7 +71,9 @@ export default function HomeScreen({ navigation }) {
       }
 
       const json = await response.json();
-      const mappedPlants = json.items.map(mapWebflowItem);
+console.log('Velden:', JSON.stringify(json.items[0].fieldData, null, 2));  // 👈 tijdelijk toevoegen
+const mappedPlants = json.items.map(mapWebflowItem);
+
       setPlants(mappedPlants);
 
     } catch (err) {
