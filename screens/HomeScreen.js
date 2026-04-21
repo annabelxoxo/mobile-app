@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ProductCard from '../ProductCard';
+import BlogCard from '../BlogCard';
 import { Picker } from '@react-native-picker/picker';
 import {
   View,
@@ -19,9 +20,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 // ─── Webflow API configuratie ─────────────────────────────────────────────────
 const WEBFLOW_API_TOKEN = '9888014e5b2bf77af6f68ed4e698bc207690d096e725e25a4ef4409de1b821c7';
-const WEBFLOW_COLLECTION_ID = '69e6a7ef54314a229028f5c9';
+const WEBFLOW_PLANTS_COLLECTION_ID = '69e6a7ef54314a229028f5c9';
+const WEBFLOW_BLOGS_COLLECTION_ID = 'JOUW_BLOG_COLLECTION_ID_HIER'; // 👈 vervang dit!
 
-const mapWebflowItem = (item) => ({
+// ─── Webflow velden vertalen ──────────────────────────────────────────────────
+const mapPlant = (item) => ({
   id: item._id,
   name: item.fieldData['name'] ?? 'Onbekend',
   latinName: item.fieldData['latijnse-naam'] ?? '',
@@ -33,10 +36,21 @@ const mapWebflowItem = (item) => ({
   petFriendly: item.fieldData['diervriendelijk'] ?? false,
 });
 
+const mapBlog = (item) => ({
+  id: item._id,
+  title: item.fieldData['title'] ?? item.fieldData['naam'] ?? 'Onbekend',
+  description: item.fieldData['description'] ?? item.fieldData['beschrijving'] ?? '',
+  content: item.fieldData['content'] ?? item.fieldData['inhoud'] ?? '',
+  imageUri: item.fieldData['imageUri'] ?? item.fieldData['afbeelding'] ?? '',
+  category: item.fieldData['category'] ?? item.fieldData['categorie'] ?? '',
+});
+
 export default function HomeScreen({ navigation }) {
   // ─── State ──────────────────────────────────────────────────────────────────
   const [plants, setPlants] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [blogs, setBlogs] = useState([]);
+  const [isLoadingPlants, setIsLoadingPlants] = useState(true);
+  const [isLoadingBlogs, setIsLoadingBlogs] = useState(true);
   const [error, setError] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Alle');
@@ -46,18 +60,17 @@ export default function HomeScreen({ navigation }) {
   const [petFriendlyOnly, setPetFriendlyOnly] = useState(false);
   const [cart, setCart] = useState({});
 
-  // ─── Fetch ────────────────────────────────────────────────────────────────
+  // ─── Fetch planten ────────────────────────────────────────────────────────
   useEffect(() => {
     fetchPlants();
+    fetchBlogs();
   }, []);
 
   const fetchPlants = async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-
+      setIsLoadingPlants(true);
       const response = await fetch(
-        `https://api.webflow.com/v2/collections/${WEBFLOW_COLLECTION_ID}/items`,
+        `https://api.webflow.com/v2/collections/${WEBFLOW_PLANTS_COLLECTION_ID}/items`,
         {
           method: 'GET',
           headers: {
@@ -66,20 +79,37 @@ export default function HomeScreen({ navigation }) {
           },
         }
       );
-
-      if (!response.ok) {
-        throw new Error(`API fout: ${response.status} ${response.statusText}`);
-      }
-
+      if (!response.ok) throw new Error(`API fout: ${response.status}`);
       const json = await response.json();
-      const mappedPlants = json.items.map(mapWebflowItem);
-      setPlants(mappedPlants);
-
+      setPlants(json.items.map(mapPlant));
     } catch (err) {
-      console.error('Fout bij ophalen planten:', err);
       setError(err.message);
     } finally {
-      setIsLoading(false);
+      setIsLoadingPlants(false);
+    }
+  };
+
+  // ─── Fetch blogs ──────────────────────────────────────────────────────────
+  const fetchBlogs = async () => {
+    try {
+      setIsLoadingBlogs(true);
+      const response = await fetch(
+        `https://api.webflow.com/v2/collections/${WEBFLOW_BLOGS_COLLECTION_ID}/items`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${WEBFLOW_API_TOKEN}`,
+            'accept': 'application/json',
+          },
+        }
+      );
+      if (!response.ok) throw new Error(`Blog API fout: ${response.status}`);
+      const json = await response.json();
+      setBlogs(json.items.map(mapBlog));
+    } catch (err) {
+      console.error('Blogs ophalen mislukt:', err.message);
+    } finally {
+      setIsLoadingBlogs(false);
     }
   };
 
@@ -136,7 +166,7 @@ export default function HomeScreen({ navigation }) {
   const pickerBg = isDarkMode ? '#1a2e22' : '#ffffff';
 
   // ─── Laadscherm ───────────────────────────────────────────────────────────
-  if (isLoading) {
+  if (isLoadingPlants) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
         <View style={styles.centered}>
@@ -157,7 +187,7 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.errorEmoji}>🪴</Text>
           <Text style={[styles.errorTitle, { color: textColor }]}>Oeps, er ging iets mis!</Text>
           <Text style={styles.errorMsg}>{error}</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={fetchPlants}>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => { fetchPlants(); fetchBlogs(); }}>
             <Text style={styles.retryText}>Opnieuw proberen</Text>
           </TouchableOpacity>
         </View>
@@ -193,19 +223,10 @@ export default function HomeScreen({ navigation }) {
             ].map((option) => (
               <TouchableOpacity
                 key={option.value}
-                style={[
-                  styles.modalOption,
-                  sortOption === option.value && styles.modalOptionActive,
-                ]}
-                onPress={() => {
-                  setSortOption(option.value);
-                  setSortModalVisible(false);
-                }}
+                style={[styles.modalOption, sortOption === option.value && styles.modalOptionActive]}
+                onPress={() => { setSortOption(option.value); setSortModalVisible(false); }}
               >
-                <Text style={[
-                  styles.modalOptionText,
-                  sortOption === option.value && styles.modalOptionTextActive,
-                ]}>
+                <Text style={[styles.modalOptionText, sortOption === option.value && styles.modalOptionTextActive]}>
                   {option.label}
                 </Text>
               </TouchableOpacity>
@@ -214,11 +235,8 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </Modal>
 
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+
         <View style={styles.header}>
           <Image
             source={{ uri: 'https://images.unsplash.com/photo-1462275646964-a0e3386b89fa?w=800&q=80' }}
@@ -245,7 +263,6 @@ export default function HomeScreen({ navigation }) {
           </View>
         )}
 
-
         <View style={[styles.controlBar, { backgroundColor: cardBg }]}>
           <View style={styles.switchRow}>
             <Text style={[styles.switchLabel, { color: textColor }]}>
@@ -260,7 +277,7 @@ export default function HomeScreen({ navigation }) {
           </View>
           <View style={styles.switchRow}>
             <Text style={[styles.switchLabel, { color: textColor }]}>
-              Alleen diervriendelijk
+              🐾 Alleen diervriendelijk
             </Text>
             <Switch
               value={petFriendlyOnly}
@@ -300,39 +317,57 @@ export default function HomeScreen({ navigation }) {
 
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>
-            {filteredAndSortedPlants.length} plant{filteredAndSortedPlants.length !== 1 ? 'en' : ''} gevonden
+            🌱 {filteredAndSortedPlants.length} plant{filteredAndSortedPlants.length !== 1 ? 'en' : ''} gevonden
           </Text>
-          <TouchableOpacity
-            style={styles.sortButton}
-            onPress={() => setSortModalVisible(true)}
-          >
+          <TouchableOpacity style={styles.sortButton} onPress={() => setSortModalVisible(true)}>
             <Text style={styles.sortButtonText}>{sortLabels[sortOption]}</Text>
           </TouchableOpacity>
         </View>
 
         {filteredAndSortedPlants.length > 0 ? (
-          <>
-            {filteredAndSortedPlants.map((plant) => (
-              <ProductCard
-                key={plant.id}
-                name={plant.name}
-                latinName={plant.latinName}
-                description={plant.description}
-                price={plant.price}
-                imageUri={plant.imageUri}
-                tag={plant.tag}
-                onDetailsPress={() => navigation.navigate('ProductDetails', { plant })}
-                onCardPress={() => navigation.navigate('ProductDetails', { plant })}
-                onQuantityChange={handleQuantityChange}
-              />
-            ))}
-          </>
+          filteredAndSortedPlants.map((plant) => (
+            <ProductCard
+              key={plant.id}
+              name={plant.name}
+              latinName={plant.latinName}
+              description={plant.description}
+              price={plant.price}
+              imageUri={plant.imageUri}
+              tag={plant.tag}
+              onDetailsPress={() => navigation.navigate('ProductDetails', { plant })}
+              onCardPress={() => navigation.navigate('ProductDetails', { plant })}
+              onQuantityChange={handleQuantityChange}
+            />
+          ))
         ) : (
           <View style={styles.emptyState}>
-            <Text style={[styles.emptyText, { color: textColor }]}>
-              Geen planten gevonden...
-            </Text>
+            <Text style={[styles.emptyText, { color: textColor }]}>Geen planten gevonden...</Text>
             <Text style={styles.emptySubText}>Probeer een andere zoekterm of categorie</Text>
+          </View>
+        )}
+
+        <View style={[styles.sectionHeader, { marginTop: 12 }]}>
+          <Text style={[styles.sectionTitle, { color: textColor }]}>
+          Onze blogs
+          </Text>
+        </View>
+
+        {isLoadingBlogs ? (
+          <ActivityIndicator size="small" color="#52B788" style={{ marginVertical: 20 }} />
+        ) : blogs.length > 0 ? (
+          blogs.map((blog) => (
+            <BlogCard
+              key={blog.id}
+              title={blog.title}
+              description={blog.description}
+              imageUri={blog.imageUri}
+              category={blog.category}
+              onCardPress={() => navigation.navigate('BlogDetailsScreen', { blog })}
+            />
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <Text style={[styles.emptyText, { color: textColor }]}>Geen blogs gevonden...</Text>
           </View>
         )}
 
@@ -357,9 +392,7 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
-        <Text style={styles.footer}>
-          🌿 KamerPlant Club — Made with love in België
-        </Text>
+        <Text style={styles.footer}>🌿 KamerPlant Club — Made with love in België</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -373,93 +406,44 @@ const styles = StyleSheet.create({
   errorEmoji: { fontSize: 48 },
   errorTitle: { fontSize: 20, fontWeight: '800' },
   errorMsg: { color: '#E07A5F', fontSize: 13, textAlign: 'center', paddingHorizontal: 32 },
-  retryBtn: {
-    backgroundColor: '#1B4332', borderRadius: 12,
-    paddingHorizontal: 24, paddingVertical: 12, marginTop: 8,
-  },
+  retryBtn: { backgroundColor: '#1B4332', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12, marginTop: 8 },
   retryText: { color: '#fff', fontWeight: '700' },
   header: { borderRadius: 24, overflow: 'hidden', marginBottom: 16, height: 220 },
   heroImage: { width: '100%', height: '100%', position: 'absolute' },
-  heroOverlay: {
-    flex: 1, backgroundColor: 'rgba(27, 67, 50, 0.55)',
-    justifyContent: 'flex-end', padding: 20,
-  },
+  heroOverlay: { flex: 1, backgroundColor: 'rgba(27, 67, 50, 0.55)', justifyContent: 'flex-end', padding: 20 },
   heroTitle: { fontSize: 30, fontWeight: '900', color: '#fff', letterSpacing: -0.5 },
   heroSub: { fontSize: 14, color: '#B7E4C7', marginTop: 2 },
-  cartBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#1B4332', borderRadius: 16,
-    padding: 16, marginBottom: 12,
-  },
+  cartBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#1B4332', borderRadius: 16, padding: 16, marginBottom: 12 },
   cartEmoji: { fontSize: 28 },
   cartTitle: { color: '#fff', fontWeight: '700', fontSize: 15 },
   cartTotal: { color: '#52B788', fontWeight: '800', fontSize: 16, marginTop: 2 },
-  controlBar: {
-    borderRadius: 16, padding: 14, marginBottom: 12, gap: 10,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06, shadowRadius: 6, elevation: 3,
-  },
+  controlBar: { borderRadius: 16, padding: 14, marginBottom: 12, gap: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 3 },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   switchLabel: { fontSize: 14, fontWeight: '600' },
-  searchWrapper: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
-    borderRadius: 14, paddingHorizontal: 14, marginBottom: 14,
-    borderWidth: 1.5, borderColor: '#B7E4C7',
-    shadowColor: '#1B4332', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07, shadowRadius: 6, elevation: 2,
-  },
+  searchWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, paddingHorizontal: 14, marginBottom: 14, borderWidth: 1.5, borderColor: '#B7E4C7', shadowColor: '#1B4332', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 2 },
   searchInput: { flex: 1, paddingVertical: 12, fontSize: 15 },
   dropdownLabel: { marginBottom: 6, marginTop: 4 },
   dropdownTitle: { fontSize: 14, fontWeight: '700' },
-  pickerWrapper: {
-    borderRadius: 14, marginBottom: 14,
-    borderWidth: 1.5, borderColor: '#B7E4C7',
-    overflow: 'hidden',
-    shadowColor: '#1B4332', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07, shadowRadius: 6, elevation: 2,
-  },
+  pickerWrapper: { borderRadius: 14, marginBottom: 14, borderWidth: 1.5, borderColor: '#B7E4C7', overflow: 'hidden', shadowColor: '#1B4332', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 2 },
   picker: { height: 52 },
-  sectionHeader: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: 12,
-  },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionTitle: { fontSize: 16, fontWeight: '800' },
-  sortButton: {
-    backgroundColor: '#1B4332', borderRadius: 20,
-    paddingHorizontal: 14, paddingVertical: 8,
-  },
+  sortButton: { backgroundColor: '#1B4332', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
   sortButtonText: { color: '#B7E4C7', fontWeight: '700', fontSize: 12 },
-
-  modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: 24, gap: 8,
-  },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, gap: 8 },
   modalTitle: { fontSize: 18, fontWeight: '800', marginBottom: 8 },
-  modalOption: {
-    padding: 16, borderRadius: 12,
-    backgroundColor: '#F2F7F4',
-  },
+  modalOption: { padding: 16, borderRadius: 12, backgroundColor: '#F2F7F4' },
   modalOptionActive: { backgroundColor: '#1B4332' },
   modalOptionText: { fontSize: 15, fontWeight: '600', color: '#1B4332' },
   modalOptionTextActive: { color: '#fff' },
-
-  emptyState: { alignItems: 'center', paddingVertical: 50, gap: 8 },
+  emptyState: { alignItems: 'center', paddingVertical: 30, gap: 8 },
   emptyText: { fontSize: 18, fontWeight: '700' },
   emptySubText: { color: '#8FAD99', fontSize: 14 },
-  banner: {
-    backgroundColor: '#1B4332', borderRadius: 20,
-    padding: 22, marginTop: 10, gap: 8,
-  },
+  banner: { backgroundColor: '#1B4332', borderRadius: 20, padding: 22, marginTop: 10, gap: 8 },
   bannerTitle: { color: '#fff', fontSize: 18, fontWeight: '800' },
   bannerSub: { color: '#B7E4C7', fontSize: 13, lineHeight: 18 },
-  emailInput: {
-    backgroundColor: '#2D6A4F', borderRadius: 10,
-    padding: 12, color: '#fff', fontSize: 14, marginTop: 4,
-  },
+  emailInput: { backgroundColor: '#2D6A4F', borderRadius: 10, padding: 12, color: '#fff', fontSize: 14, marginTop: 4 },
   buttonWrapper: { marginTop: 4, borderRadius: 10, overflow: 'hidden' },
   footer: { textAlign: 'center', color: '#8FAD99', fontSize: 12, marginTop: 24 },
 });
