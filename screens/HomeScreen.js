@@ -1,7 +1,6 @@
-// screens/HomeScreen.js
-
 import React, { useState, useEffect } from 'react';
 import ProductCard from '../ProductCard';
+import { Picker } from '@react-native-picker/picker';
 import {
   View,
   Text,
@@ -14,13 +13,13 @@ import {
   TouchableOpacity,
   StatusBar,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // ─── Webflow API configuratie ─────────────────────────────────────────────────
 const WEBFLOW_API_TOKEN = '9888014e5b2bf77af6f68ed4e698bc207690d096e725e25a4ef4409de1b821c7';
 const WEBFLOW_COLLECTION_ID = '69e6a7ef54314a229028f5c9';
-
 
 const mapWebflowItem = (item) => ({
   id: item._id,
@@ -29,7 +28,7 @@ const mapWebflowItem = (item) => ({
   category: item.fieldData['categorie'] ?? 'Andere',
   description: item.fieldData['beschrijving'] ?? '',
   price: item.fieldData['prijs'] ?? '0,00',
-  imageUri: item.fieldData['afbeelding-2'] ?? '',  // 👈 was 'imageUri'
+  imageUri: item.fieldData['afbeelding-2'] ?? '',
   tag: item.fieldData['tag'] ?? null,
   petFriendly: item.fieldData['diervriendelijk'] ?? false,
 });
@@ -40,12 +39,14 @@ export default function HomeScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchText, setSearchText] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('Alle');
+  const [sortOption, setSortOption] = useState('geen');
+  const [sortModalVisible, setSortModalVisible] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [petFriendlyOnly, setPetFriendlyOnly] = useState(false);
-  const [selectedChip, setSelectedChip] = useState('Alle');
   const [cart, setCart] = useState({});
 
-  // ─── Fetch bij laden van het scherm ──────────────────────────────────────────
+  // ─── Fetch ────────────────────────────────────────────────────────────────
   useEffect(() => {
     fetchPlants();
   }, []);
@@ -71,9 +72,7 @@ export default function HomeScreen({ navigation }) {
       }
 
       const json = await response.json();
-console.log('Velden:', JSON.stringify(json.items[0].fieldData, null, 2));  // 👈 tijdelijk toevoegen
-const mappedPlants = json.items.map(mapWebflowItem);
-
+      const mappedPlants = json.items.map(mapWebflowItem);
       setPlants(mappedPlants);
 
     } catch (err) {
@@ -98,17 +97,43 @@ const mappedPlants = json.items.map(mapWebflowItem);
     return sum + priceNum * item.quantity;
   }, 0);
 
-  // ─── Filter ───────────────────────────────────────────────────────────────
-  const filteredPlants = plants.filter((plant) => {
-    const matchesSearch = plant.name.toLowerCase().includes(searchText.toLowerCase());
-    const matchesPet = petFriendlyOnly ? plant.petFriendly : true;
-    const matchesChip = selectedChip === 'Alle' ? true : plant.category === selectedChip;
-    return matchesSearch && matchesPet && matchesChip;
-  });
+  // ─── Unieke categorieën ───────────────────────────────────────────────────
+  const categories = ['Alle', ...new Set(plants.map((p) => p.category).filter(Boolean))];
+
+  // ─── Filter + Sortering ───────────────────────────────────────────────────
+  const filteredAndSortedPlants = plants
+    .filter((plant) => {
+      const matchesSearch = plant.name.toLowerCase().includes(searchText.toLowerCase());
+      const matchesPet = petFriendlyOnly ? plant.petFriendly : true;
+      const matchesCategory = selectedCategory === 'Alle' ? true : plant.category === selectedCategory;
+      return matchesSearch && matchesPet && matchesCategory;
+    })
+    .sort((a, b) => {
+      const priceA = parseFloat(a.price.replace(',', '.'));
+      const priceB = parseFloat(b.price.replace(',', '.'));
+      switch (sortOption) {
+        case 'prijs-laag-hoog': return priceA - priceB;
+        case 'prijs-hoog-laag': return priceB - priceA;
+        case 'naam-a-z': return a.name.localeCompare(b.name);
+        case 'naam-z-a': return b.name.localeCompare(a.name);
+        case 'nieuwste': return -1;
+        default: return 0;
+      }
+    });
+
+  const sortLabels = {
+    'geen': '↕ Sorteren',
+    'prijs-laag-hoog': 'Prijs: laag → hoog',
+    'prijs-hoog-laag': 'Prijs: hoog → laag',
+    'naam-a-z': 'Naam: A → Z',
+    'naam-z-a': 'Naam: Z → A',
+    'nieuwste': 'Nieuwste eerst',
+  };
 
   const bg = isDarkMode ? '#0d1f15' : '#f2f7f4';
   const cardBg = isDarkMode ? '#1a2e22' : '#ffffff';
   const textColor = isDarkMode ? '#d8f3dc' : '#1b4332';
+  const pickerBg = isDarkMode ? '#1a2e22' : '#ffffff';
 
   // ─── Laadscherm ───────────────────────────────────────────────────────────
   if (isLoading) {
@@ -144,12 +169,56 @@ const mappedPlants = json.items.map(mapWebflowItem);
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+
+      <Modal
+        visible={sortModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setSortModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setSortModalVisible(false)}
+        >
+          <View style={[styles.modalContent, { backgroundColor: cardBg }]}>
+            <Text style={[styles.modalTitle, { color: textColor }]}>Sorteren op</Text>
+            {[
+              { label: 'Geen sortering', value: 'geen' },
+              { label: 'Prijs: laag → hoog', value: 'prijs-laag-hoog' },
+              { label: 'Prijs: hoog → laag', value: 'prijs-hoog-laag' },
+              { label: 'Naam: A → Z', value: 'naam-a-z' },
+              { label: 'Naam: Z → A', value: 'naam-z-a' },
+              { label: 'Nieuwste eerst', value: 'nieuwste' },
+            ].map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                style={[
+                  styles.modalOption,
+                  sortOption === option.value && styles.modalOptionActive,
+                ]}
+                onPress={() => {
+                  setSortOption(option.value);
+                  setSortModalVisible(false);
+                }}
+              >
+                <Text style={[
+                  styles.modalOptionText,
+                  sortOption === option.value && styles.modalOptionTextActive,
+                ]}>
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-
         <View style={styles.header}>
           <Image
             source={{ uri: 'https://images.unsplash.com/photo-1462275646964-a0e3386b89fa?w=800&q=80' }}
@@ -161,7 +230,6 @@ const mappedPlants = json.items.map(mapWebflowItem);
             <Text style={styles.heroSub}>Jouw groene thuis begint hier</Text>
           </View>
         </View>
-
 
         {totalItems > 0 && (
           <View style={styles.cartBanner}>
@@ -214,34 +282,37 @@ const mappedPlants = json.items.map(mapWebflowItem);
           />
         </View>
 
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
-          {['Alle', 'Tropisch', 'Cactus', 'Hangplanten', 'Luchtzuiverend', 'Groot'].map((chip) => (
-            <TouchableOpacity
-              key={chip}
-              style={[styles.chip, selectedChip === chip && styles.chipActive]}
-              onPress={() => setSelectedChip(chip)}
-            >
-              <Text style={[styles.chipText, selectedChip === chip && styles.chipTextActive]}>
-                {chip}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        <View style={styles.dropdownLabel}>
+          <Text style={[styles.dropdownTitle, { color: textColor }]}>🌿 Filter op categorie</Text>
+        </View>
+        <View style={[styles.pickerWrapper, { backgroundColor: pickerBg }]}>
+          <Picker
+            selectedValue={selectedCategory}
+            onValueChange={(value) => setSelectedCategory(value)}
+            style={[styles.picker, { color: textColor }]}
+            dropdownIconColor={textColor}
+          >
+            {categories.map((cat) => (
+              <Picker.Item key={cat} label={cat} value={cat} />
+            ))}
+          </Picker>
+        </View>
 
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>
-            {filteredPlants.length} plant{filteredPlants.length !== 1 ? 'en' : ''} gevonden
+            {filteredAndSortedPlants.length} plant{filteredAndSortedPlants.length !== 1 ? 'en' : ''} gevonden
           </Text>
-          <TouchableOpacity onPress={fetchPlants}>
-            <Text style={styles.sortLink}>↻ Vernieuwen</Text>
+          <TouchableOpacity
+            style={styles.sortButton}
+            onPress={() => setSortModalVisible(true)}
+          >
+            <Text style={styles.sortButtonText}>{sortLabels[sortOption]}</Text>
           </TouchableOpacity>
         </View>
 
-
-        {filteredPlants.length > 0 ? (
+        {filteredAndSortedPlants.length > 0 ? (
           <>
-            {filteredPlants.map((plant) => (
+            {filteredAndSortedPlants.map((plant) => (
               <ProductCard
                 key={plant.id}
                 name={plant.name}
@@ -261,7 +332,7 @@ const mappedPlants = json.items.map(mapWebflowItem);
             <Text style={[styles.emptyText, { color: textColor }]}>
               Geen planten gevonden...
             </Text>
-            <Text style={styles.emptySubText}>Probeer een andere zoekterm</Text>
+            <Text style={styles.emptySubText}>Probeer een andere zoekterm of categorie</Text>
           </View>
         )}
 
@@ -338,20 +409,44 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.07, shadowRadius: 6, elevation: 2,
   },
   searchInput: { flex: 1, paddingVertical: 12, fontSize: 15 },
-  chips: { marginBottom: 16 },
-  chip: {
-    backgroundColor: '#1B4332', borderRadius: 20,
-    paddingHorizontal: 16, paddingVertical: 8, marginRight: 8,
+  dropdownLabel: { marginBottom: 6, marginTop: 4 },
+  dropdownTitle: { fontSize: 14, fontWeight: '700' },
+  pickerWrapper: {
+    borderRadius: 14, marginBottom: 14,
+    borderWidth: 1.5, borderColor: '#B7E4C7',
+    overflow: 'hidden',
+    shadowColor: '#1B4332', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07, shadowRadius: 6, elevation: 2,
   },
-  chipActive: { backgroundColor: '#E07A5F' },
-  chipText: { color: '#B7E4C7', fontWeight: '700', fontSize: 13 },
-  chipTextActive: { color: '#fff' },
+  picker: { height: 52 },
   sectionHeader: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', marginBottom: 12,
   },
   sectionTitle: { fontSize: 16, fontWeight: '800' },
-  sortLink: { color: '#52B788', fontWeight: '700', fontSize: 13 },
+  sortButton: {
+    backgroundColor: '#1B4332', borderRadius: 20,
+    paddingHorizontal: 14, paddingVertical: 8,
+  },
+  sortButtonText: { color: '#B7E4C7', fontWeight: '700', fontSize: 12 },
+
+  modalOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    padding: 24, gap: 8,
+  },
+  modalTitle: { fontSize: 18, fontWeight: '800', marginBottom: 8 },
+  modalOption: {
+    padding: 16, borderRadius: 12,
+    backgroundColor: '#F2F7F4',
+  },
+  modalOptionActive: { backgroundColor: '#1B4332' },
+  modalOptionText: { fontSize: 15, fontWeight: '600', color: '#1B4332' },
+  modalOptionTextActive: { color: '#fff' },
+
   emptyState: { alignItems: 'center', paddingVertical: 50, gap: 8 },
   emptyText: { fontSize: 18, fontWeight: '700' },
   emptySubText: { color: '#8FAD99', fontSize: 14 },
