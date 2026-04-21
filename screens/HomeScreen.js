@@ -21,7 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // ─── Webflow API configuratie ─────────────────────────────────────────────────
 const WEBFLOW_API_TOKEN = '9888014e5b2bf77af6f68ed4e698bc207690d096e725e25a4ef4409de1b821c7';
 const WEBFLOW_PLANTS_COLLECTION_ID = '69e6a7ef54314a229028f5c9';
-const WEBFLOW_BLOGS_COLLECTION_ID = 'JOUW_BLOG_COLLECTION_ID_HIER'; // 👈 vervang dit!
+const WEBFLOW_BLOGS_COLLECTION_ID = '69e76c3e934af59fbbb5256e'; // 
 
 // ─── Webflow velden vertalen ──────────────────────────────────────────────────
 const mapPlant = (item) => ({
@@ -38,13 +38,13 @@ const mapPlant = (item) => ({
 
 const mapBlog = (item) => ({
   id: item._id,
-  title: item.fieldData['title'] ?? item.fieldData['naam'] ?? 'Onbekend',
-  description: item.fieldData['description'] ?? item.fieldData['beschrijving'] ?? '',
-  content: item.fieldData['content'] ?? item.fieldData['inhoud'] ?? '',
-  imageUri: item.fieldData['imageUri'] ?? item.fieldData['afbeelding'] ?? '',
-  category: item.fieldData['category'] ?? item.fieldData['categorie'] ?? '',
+  title: item.fieldData.name ?? 'Onbekend',
+  description: item.fieldData.description ?? '',
+  content: item.fieldData.content ?? '',
+  imageUri: item.fieldData.imageuri ?? null,
+  category: item.fieldData.category ?? '',
+  slug: item.fieldData.slug ?? item._id,
 });
-
 export default function HomeScreen({ navigation }) {
   // ─── State ──────────────────────────────────────────────────────────────────
   const [plants, setPlants] = useState([]);
@@ -105,6 +105,7 @@ export default function HomeScreen({ navigation }) {
       );
       if (!response.ok) throw new Error(`Blog API fout: ${response.status}`);
       const json = await response.json();
+      console.log('Blog velden:', JSON.stringify(json.items[0].fieldData, null, 2));
       setBlogs(json.items.map(mapBlog));
     } catch (err) {
       console.error('Blogs ophalen mislukt:', err.message);
